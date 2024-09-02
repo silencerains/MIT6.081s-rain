@@ -18,10 +18,10 @@ extern int devintr();
 
 
 int
-cowfault(pagetable_t pagetable, uint64 va){
+cowfault(pagetable_t pagetable, uint64 va)
+{
     if(va > MAXVA) 
       return -1;
-    
 
     pte_t *pte = walk(pagetable, va, 0);
     
@@ -32,18 +32,18 @@ cowfault(pagetable_t pagetable, uint64 va){
       return -1;
 
     uint64 pa = PTE2PA(*pte); 
-    printf("old mapping:va %p pa %p flags %x\n",va, pa,PTE_FLAGS(*pte));
     uint flags = PTE_FLAGS(*pte) | PTE_W;
     char *mem;
     if((mem = kalloc()) == 0){
       return -1;
     }
-
+    
     memmove(mem, (char*)pa, PGSIZE);
-    if(mappages(pagetable, va, PGSIZE, (uint64)mem, flags) != 0){
-      return -1;
-    }
-    //kfree((void *)pa);
+    
+    *pte = PA2PTE(mem) | flags;
+
+    kfree((void *)pa);
+
     return 0;
 }
 
@@ -97,7 +97,7 @@ usertrap(void)
 
     syscall();
   } else if(r_scause() == 15){
-    if(cowfault(p->pagetable, r_stval() < 0))
+    if(cowfault(p->pagetable, r_stval()) < 0)
       p->killed = 1;
   } else if((which_dev = devintr()) != 0){
     // ok
