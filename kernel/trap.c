@@ -65,6 +65,26 @@ usertrap(void)
     intr_on();
 
     syscall();
+  } else if(r_scause() == 15){
+    uint64 va = PGROUNDDOWN(r_stval());
+    pte_t *pte = walk(p->pagetable, va, 0);
+    uint64 pa = PTE2PA(*pte); 
+    printf("page fault old mapping:\n va %p pa %p\n",va,pa);
+    uint flags = PTE_FLAGS(*pte) | PTE_W;
+    char *mem;
+    if((mem = kalloc()) == 0){
+      p->killed = 1;
+      goto kill;
+    }
+    memmove(mem, (char*)pa, PGSIZE);
+    if(mappages(p->pagetable, va, PGSIZE, (uint64)mem, flags) != 0){
+      p->killed = 1;
+      goto kill;
+    }
+    //for debug
+    pte = walk(p->pagetable, va, 0);
+    pa = PTE2PA(*pte);
+    printf("page fault new mapping:\n va %p pa %p\n",va,pa);
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {
@@ -73,13 +93,14 @@ usertrap(void)
     p->killed = 1;
   }
 
+kill:
   if(p->killed)
     exit(-1);
 
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2)
     yield();
-
+  
   usertrapret();
 }
 
