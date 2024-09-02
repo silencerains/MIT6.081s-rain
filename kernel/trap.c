@@ -20,7 +20,7 @@ extern int devintr();
 int
 cowfault(pagetable_t pagetable, uint64 va)
 {
-    if(va > MAXVA) 
+    if(va >= MAXVA) 
       return -1;
 
     pte_t *pte = walk(pagetable, va, 0);
@@ -32,7 +32,7 @@ cowfault(pagetable_t pagetable, uint64 va)
       return -1;
 
     uint64 pa = PTE2PA(*pte); 
-    uint flags = PTE_FLAGS(*pte) | PTE_W;
+    uint flags = PTE_FLAGS(*pte) | PTE_W | PTE_COW;
     char *mem;
     if((mem = kalloc()) == 0){
       return -1;

@@ -153,6 +153,8 @@ void            uartintr(void);
 void            uartputc(int);
 void            uartputc_sync(int);
 int             uartgetc(void);
+int             cowfault(pagetable_t,uint64);
+
 
 // vm.c
 void            kvminit(void);
