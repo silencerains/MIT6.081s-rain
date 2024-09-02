@@ -320,6 +320,7 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       //kfree((void *)pa);
       goto err;
     }
+    //incref(pa);
   }
   return 0;
 
